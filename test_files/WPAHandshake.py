@@ -12,4 +12,4 @@ def getWPA(pkt):
 iface = sys.argv[1]
 allpackets = []
 pkt = sniff(filter="ether proto 0x888e", iface=iface, count=100, prn=getWPA)
-wrpcap('sniffed.pcap', allpackets)
+# wrpcap('sniffed.pcap', allpackets)

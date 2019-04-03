@@ -80,7 +80,7 @@ def mitm():
         print("[!] Exiting...")
         sys.exit(1)
 
-    print("[*] MAC resolves successfull")
+    print("[*] MAC resolved successfully")
 
     while True:
         try:

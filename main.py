@@ -7,7 +7,6 @@ import os
 import signal
 import subprocess
 import sys
-import threading
 
 from scapy.layers.dot11 import Dot11FCS
 
@@ -30,7 +29,7 @@ def main():
     require_root()
 
     # Capture CTRL-C
-    signal.signal(signal.SIGINT, finalize)
+    signal.signal(signal.SIGINT, catch_exceptions)
 
     iface = input("Please specify the interface: ")
     set_mon_mode("monitor")
@@ -82,12 +81,19 @@ def select_ap():
     return selected_network.aps[ap_id]
 
 
+# Executed when signal catches an exception (like CTRL+C) during runtime
+def catch_exceptions(signal, frame):
+    finalize()
+
+
 # Clean up and shut down
 def finalize():
     global sniff_thread
 
     if sniff_thread is not None:
         sniff_thread.join()
+
+    print_ap_stats()
 
     set_mon_mode("managed")
 
@@ -98,12 +104,12 @@ def finalize():
 
 # Prints statistics about the currently captured APs
 def print_ap_stats():
-    global aps
+    global networks
 
     print("########## STATISTICS ##########")
-    print("Total APs found: %d" % len(aps))
-    print("Encrypted APs  : %d" % len([ap for ap in aps.values() if ap.enc is "Y"]))
-    print("Unencrypted APs: %d" % len([ap for ap in aps.values() if ap.enc is "N"]))
+    print("Total Networks found: %d" % len(networks))
+    print("Encrypted Networks  : %d" % len([n for n in networks if n.encrypted]))
+    print("Unencrypted Networks: %d" % len([n for n in networks if not n.encrypted]))
 
 
 # Set the interface in a certain mode. Typically monitor or managed

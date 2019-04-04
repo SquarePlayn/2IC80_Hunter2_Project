@@ -14,9 +14,9 @@ class Network:
 
     def __str__(self):
         message = "ID: " + str(self.id)
-        message += ", ESSID: " + str(self.essid)
         message += ", encrypted: " + str(self.encrypted)
         message += ", channel: " + str(self.channel)
         message += ", #aps: " + str(len(self.aps))
+        message += ", ESSID: " + str(self.essid)
         message += "."
         return message

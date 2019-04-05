@@ -1,0 +1,8 @@
+Capture handshake
+Command line essid and/or bssid and/or victim MAC
+Victim selection
+Show device name instead of first part of MAC (dictionary)
+Fix byte prefix on essids
+MITM?
+Printing formatting
+Check invalid user input

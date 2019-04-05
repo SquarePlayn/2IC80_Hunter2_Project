@@ -34,6 +34,8 @@ def main():
 
     require_root()
 
+    read_mac_data()
+
     # Capture CTRL-C
     # signal.signal(signal.SIGINT, catch_exceptions)
 
@@ -51,6 +53,8 @@ def main():
     print(selected_network)
     print(selected_ap)
     print("")
+
+    print("AP converted: ", mac_convert(selected_ap.bssid))
 
     sniff_handshake(selected_ap.bssid, "ff:ff:ff:ff:ff:ff")  # TODO Select victim
     # TODO Capture handshake
@@ -152,24 +156,30 @@ def finalize():
 
 
 # ---------- UTILITIES ----------
+
+
 # Makes dictionary from Wireshark data
-def read_MAC_data():
+def read_mac_data():
     global mac_dict
-    f = open("MACdata.txt", "r")
-    if f.mode == 'r':
-        mac_dict = f.readlines()
-        for l in data:
-            str = l.split()
-            if len(str[0]) == 8:
-                mac_dict[str[0]] = str[1]
+
+    with open("MACdata.txt", "rb") as mac_file:
+        mac_dict = dict()
+        data = mac_file.readlines()
+        for line in data:
+            split_line = line.decode("utf-8") .split()
+            if len(split_line[0]) == 8:
+                mac_dict[split_line[0].lower()] = split_line[1]
 
 
 # Function to look up the vendor of a certain MAC address
-def MAC_lookup(MAC):
-    if MAC[0:8] in mac_dict:
-        return mac_dict[MAC[0:8]]
+def mac_convert(mac):
+    global mac_dict
+
+    if mac[0:8] in mac_dict:
+        return mac_dict[mac[0:8]]+mac[8:]
     else:
-         return ""
+        return mac
+
 
 # Prints statistics about the currently captured APs
 def print_ap_stats():

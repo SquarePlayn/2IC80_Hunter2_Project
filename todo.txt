@@ -3,4 +3,3 @@ Command line essid and/or bssid and/or victim MAC
 Victim selection
 MITM?
 Printing formatting
-Check invalid user input

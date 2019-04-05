@@ -3,22 +3,19 @@ The main file for our program
 Requires scapy 2.4.2, installable using `pip3 install scapy`
 """
 
-# The main function that will run on program start
-import os
-import signal
-import subprocess
 import sys
 import time
 
 from scapy.layers.dot11 import Dot11FCS
 
-# TODO Find out when this is which
+import utilities
 # Dot11Type = Dot11
 from ap_sniffer import APSniffer
 from channel_hopper import ChannelHopper
 from deauth_sender import DeauthSender
 from handshake_sniffer import HandshakeSniffer
 
+# TODO Find out when this is which
 Dot11Type = Dot11FCS
 
 # Global used variables
@@ -29,18 +26,19 @@ selected_network = None  # The network to attack
 selected_ap = None  # The access point to attack
 
 
+# The main function that will run on program start
 def main():
     global iface, selected_network, selected_ap, deauth_thread
 
-    require_root()
+    utilities.require_root()
 
-    read_mac_data()
+    utilities.initialize_mac_data()
 
     # Capture CTRL-C
     # signal.signal(signal.SIGINT, catch_exceptions)
 
     iface = input("Please specify the interface: ")
-    set_mon_mode("monitor")
+    utilities.set_mon_mode(iface, "monitor")
 
     channel_hopper_thread = ChannelHopper(iface)
     channel_hopper_thread.start()
@@ -54,7 +52,7 @@ def main():
     print(selected_ap)
     print("")
 
-    print("AP converted: ", mac_convert(selected_ap.bssid))
+    print("AP converted: ", utilities.convert_mac(selected_ap.bssid))
 
     sniff_handshake(selected_ap.bssid, "ff:ff:ff:ff:ff:ff")  # TODO Select victim
     # TODO Capture handshake
@@ -150,67 +148,11 @@ def catch_exceptions(signal, frame):
 
 # Clean up and shut down
 def finalize():
-    print_ap_stats()
-    set_mon_mode("managed")
+    global iface
+
+    utilities.print_networks_stats(networks)
+    utilities.set_mon_mode(iface, "managed")
     sys.exit(0)
-
-
-# ---------- UTILITIES ----------
-
-
-# Makes dictionary from Wireshark data
-def read_mac_data():
-    global mac_dict
-
-    with open("MACdata.txt", "rb") as mac_file:
-        mac_dict = dict()
-        data = mac_file.readlines()
-        for line in data:
-            split_line = line.decode("utf-8") .split()
-            if len(split_line[0]) == 8:
-                mac_dict[split_line[0].lower()] = split_line[1]
-
-
-# Function to look up the vendor of a certain MAC address
-def mac_convert(mac):
-    global mac_dict
-
-    if mac[0:8] in mac_dict:
-        return mac_dict[mac[0:8]]+mac[8:]
-    else:
-        return mac
-
-
-# Prints statistics about the currently captured APs
-def print_ap_stats():
-    global networks
-
-    print("")
-    print("########## STATISTICS ##########")
-    print("Total Networks found: %d" % len(networks))
-    print("Encrypted Networks  : %d" % len([n for n in networks if n.encrypted]))
-    print("Unencrypted Networks: %d" % len([n for n in networks if not n.encrypted]))
-
-
-# Set the interface in a certain mode. Typically monitor or managed
-def set_mon_mode(mode):
-    bash_command("ifconfig " + iface + " down")
-    bash_command("iwconfig " + iface + " mode " + mode)
-    bash_command("ifconfig " + iface + " up")
-
-
-# Execute a bach command
-def bash_command(command):
-    command = command.split()
-    p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    output, err = p.communicate()
-
-
-# Makes sure the script is ran as root
-def require_root():
-    if os.getuid() != 0:
-        print("Please run the script as root!")
-        exit()
 
 
 # Run the script

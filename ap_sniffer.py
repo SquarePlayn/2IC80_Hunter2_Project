@@ -28,7 +28,7 @@ class APSniffer(threading.Thread):
         if Dot11Beacon in pkt or Dot11ProbeResp in pkt:
             # This is a packet with AP info
 
-            essid = pkt[Dot11Elt].info
+            essid = pkt[Dot11Elt].info.decode("utf-8")
             bssid = pkt[self.dot11Type].addr3
             channel = int(ord(pkt[Dot11Elt:3].info))
 

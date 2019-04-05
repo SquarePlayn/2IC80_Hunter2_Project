@@ -154,19 +154,20 @@ def finalize():
 # ---------- UTILITIES ----------
 # Makes dictionary from Wireshark data
 def read_MAC_data():
+    global mac_dict
     f = open("MACdata.txt", "r")
     if f.mode == 'r':
-        data = f.readlines()
+        mac_dict = f.readlines()
         for l in data:
             str = l.split()
             if len(str[0]) == 8:
-                dict[str[0]] = str[1]
+                mac_dict[str[0]] = str[1]
 
 
 # Function to look up the vendor of a certain MAC address
 def MAC_lookup(MAC):
-    if MAC[0:8] in dict:
-        return dict[MAC[0:8]]
+    if MAC[0:8] in mac_dict:
+        return mac_dict[MAC[0:8]]
     else:
          return ""
 

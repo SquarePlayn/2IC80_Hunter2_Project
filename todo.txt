@@ -1,7 +1,6 @@
 Fix Capture handshake
 Command line essid and/or bssid and/or victim MAC
 Victim selection
-Actually use showing device name instead of first part of MAC (dictionary)
 MITM?
 Printing formatting
 Check invalid user input

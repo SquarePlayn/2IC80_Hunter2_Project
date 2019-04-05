@@ -18,7 +18,7 @@ class APSniffer(threading.Thread):
         self.print_new_networks = print_new_networks
         self.print_new_aps = print_new_aps
         self.target_network = target_network
-        self.shutdown = False
+        self.stop = False
 
     def run(self):
         sniff(iface=self.iface, prn=self.packet_sniffed, stop_filter=self.check_stop, count=0)
@@ -71,4 +71,4 @@ class APSniffer(threading.Thread):
 
     # Defines whether the program should stop sniffing
     def check_stop(self, pkt):
-        return self.shutdown
+        return self.stop

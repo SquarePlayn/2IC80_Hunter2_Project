@@ -152,6 +152,23 @@ def finalize():
 
 
 # ---------- UTILITIES ----------
+# Makes dictionary from Wireshark data
+def read_MAC_data():
+    f = open("MACdata.txt", "r")
+    if f.mode == 'r':
+        data = f.readlines()
+        for l in data:
+            str = l.split()
+            if len(str[0]) == 8:
+                dict[str[0]] = str[1]
+
+
+# Function to look up the vendor of a certain MAC address
+def MAC_lookup(MAC):
+    if MAC[0:8] in dict:
+        return dict[MAC[0:8]]
+    else:
+         return ""
 
 # Prints statistics about the currently captured APs
 def print_ap_stats():

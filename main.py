@@ -10,12 +10,15 @@ from scapy.layers.dot11 import Dot11FCS
 
 import utilities
 # Dot11Type = Dot11
+from access_point import AccessPoint
 from ap_sniffer import APSniffer
 from channel_hopper import ChannelHopper
 from deauth_sender import DeauthSender
 from handshake_sniffer import HandshakeSniffer
 
 # TODO Find out when this is which
+from network import Network
+
 Dot11Type = Dot11FCS
 
 # Global used variables
@@ -48,11 +51,8 @@ def main():
 
     print("")
     print("You were going to attack the following network and this specific AP:")
-    print(selected_network)
-    print(selected_ap)
+    print(selected_network.essid + " - " + utilities.convert_mac(selected_ap.bssid))
     print("")
-
-    print("AP converted: ", utilities.convert_mac(selected_ap.bssid))
 
     sniff_handshake(selected_ap.bssid, "ff:ff:ff:ff:ff:ff")  # TODO Select victim
 
@@ -70,6 +70,7 @@ def select_network():
 
     print("")
     print("Please specify the ID of the Network that you want to attack:")
+    print(Network.get_header())
     sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_networks=True)
     threads.add(sniff_thread)
     sniff_thread.start()
@@ -92,6 +93,7 @@ def select_ap():
 
     print("")
     print("Please specify the ID of the AP that you want to attack:")
+    print(AccessPoint.get_header())
     for ap in selected_network.aps:
         print(ap)
     sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_aps=True, target_network=selected_network)

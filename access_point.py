@@ -15,8 +15,8 @@ class AccessPoint:
 
     # Print properties of this access point
     def __str__(self):
-        message = "ID: " + str(self.id)
-        message += ", NetworkID: " + str(self.network.id)
-        message += ", BSSID: " + str(convert_mac(self.bssid))
-        message += "."
-        return message
+        return " %02d  %02d         %s" % (self.id, self.network.id, convert_mac(self.bssid))
+
+    @staticmethod
+    def get_header():
+        return " ID  NetworkID BSSID"

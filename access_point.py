@@ -9,6 +9,7 @@ class AccessPoint:
         self.bssid = bssid
         self.network = network
         self.id = id
+        self.clients = []
 
     # Print properties of this access point
     def __str__(self):

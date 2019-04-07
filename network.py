@@ -13,10 +13,13 @@ class Network:
         self.aps = []
 
     def __str__(self):
-        message = "ID: " + str(self.id)
-        message += ", encrypted: " + str(self.encrypted)
-        message += ", channel: " + str(self.channel)
-        message += ", #aps: " + str(len(self.aps))
-        message += ", ESSID: " + str(self.essid)
-        message += "."
-        return message
+        if self.encrypted:
+            enc_string = "Yes"
+        else:
+            enc_string = "No "
+        return " %02d  %s        %s" % (self.id, enc_string, self.essid)
+
+    @staticmethod
+    def get_header():
+        return " ID  Encrypted  ESSID "
+

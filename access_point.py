@@ -4,6 +4,9 @@ Class holding info about one BSSID (Access Point)
 
 
 # One physical access point (one MAC address)
+from utilities import convert_mac
+
+
 class AccessPoint:
     def __init__(self, network, id, bssid):
         self.bssid = bssid
@@ -13,8 +16,8 @@ class AccessPoint:
 
     # Print properties of this access point
     def __str__(self):
-        message = "ID: " + str(self.id)
-        message += ", NetworkID: " + str(self.network.id)
-        message += ", BSSID: " + str(self.bssid)
-        message += "."
-        return message
+        return " %02d  %02d         %s" % (self.id, self.network.id, convert_mac(self.bssid))
+
+    @staticmethod
+    def get_header():
+        return " ID  NetworkID BSSID"

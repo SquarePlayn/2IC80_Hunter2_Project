@@ -20,7 +20,7 @@ class APSniffer(threading.Thread):
         self.print_new_aps = print_new_aps
         self.print_new_clients = print_new_clients
         self.target_network = target_network
-        self.shutdown = False
+        self.stop = False
 
     def run(self):
         sniff(iface=self.iface, prn=self.packet_sniffed, stop_filter=self.check_stop, count=0)
@@ -29,7 +29,8 @@ class APSniffer(threading.Thread):
     def packet_sniffed(self, pkt):
         if Dot11Beacon in pkt or Dot11ProbeResp in pkt:
             # This is a packet with AP info
-            essid = pkt[Dot11Elt].info
+
+            essid = pkt[Dot11Elt].info.decode("utf-8")
             bssid = pkt[self.dot11Type].addr3
             channel = int(ord(pkt[Dot11Elt:3].info))
 
@@ -90,4 +91,4 @@ class APSniffer(threading.Thread):
 
     # Defines whether the program should stop sniffing
     def check_stop(self, pkt):
-        return self.shutdown
+        return self.stop

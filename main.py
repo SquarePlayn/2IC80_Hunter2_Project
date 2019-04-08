@@ -48,7 +48,7 @@ def main():
     selected_ap = select_ap()
     channel_hopper_thread.stop = True
     channel_hopper_thread.join()
-    utilities.set_channel(iface, selected_network.channel)
+    utilities.set_channel(iface, selected_ap.channel)
     selected_client = select_client()
 
     print("")

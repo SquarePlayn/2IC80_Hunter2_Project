@@ -46,7 +46,7 @@ class APSniffer(threading.Thread):
             if len(matching_networks) == 0:
                 # No networks yet with this ESSID, create a new one
                 n_id = len(self.networks)
-                network = Network(n_id, essid, encrypted, channel)
+                network = Network(n_id, essid, encrypted)
                 self.networks.append(network)
 
                 # Print it if wanted
@@ -64,7 +64,7 @@ class APSniffer(threading.Thread):
             matching_aps = [ap for ap in network.aps if ap.bssid == bssid]
             if len(matching_aps) == 0:
                 ap_id = len(network.aps)
-                ap = AccessPoint(network, ap_id, bssid)
+                ap = AccessPoint(network, ap_id, bssid, channel)
                 network.aps.append(ap)
 
                 # Print it if wanted

@@ -5,11 +5,10 @@ Class holding info about one essid (Network)
 
 # A network, potentially consisting of multiple APs (multiple transmitters)
 class Network:
-    def __init__(self, id, essid, encrypted, channel):
+    def __init__(self, id, essid, encrypted):
         self.id = id
         self.essid = essid
         self.encrypted = encrypted
-        self.channel = channel
         self.aps = []
 
     def __str__(self):

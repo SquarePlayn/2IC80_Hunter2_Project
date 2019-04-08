@@ -8,16 +8,17 @@ from utilities import convert_mac
 
 
 class AccessPoint:
-    def __init__(self, network, id, bssid):
-        self.bssid = bssid
+    def __init__(self, network, id, bssid, channel):
         self.network = network
         self.id = id
+        self.bssid = bssid
+        self.channel = channel
         self.clients = []
 
     # Print properties of this access point
     def __str__(self):
-        return " %02d  %02d         %s" % (self.id, self.network.id, convert_mac(self.bssid))
+        return " %02d  %02d       %s" % (self.id, self.channel, convert_mac(self.bssid))
 
     @staticmethod
     def get_header():
-        return " ID  NetworkID BSSID"
+        return " ID  CHANNEL  BSSID"

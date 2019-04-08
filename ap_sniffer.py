@@ -78,16 +78,15 @@ class APSniffer(threading.Thread):
                         client_mac = pkt[Dot11FCS].addr1
                         matching_clients = [c for c in ap.clients if c.bssid == client_mac]
                         if len(matching_clients) == 0:
+                            # Newly detected client
+
                             client_id = len(ap.clients)
-                            client = Client(client_mac, client_id)
+                            client = Client(ap, client_id, client_mac)
                             ap.clients.append(client)
-                            #Print client if wanted
+
+                            # gPrint client if wanted
                             if self.print_new_clients:
                                 print(client)
-
-
-
-
 
     # Defines whether the program should stop sniffing
     def check_stop(self, pkt):

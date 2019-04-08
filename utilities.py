@@ -55,3 +55,8 @@ def require_root():
     if os.getuid() != 0:
         print("Please run the script as root!")
         exit()
+
+
+# Set the interface to a specific channel
+def set_channel(iface, channel):
+    os.system("iw dev %s set channel %d" % (iface, channel))

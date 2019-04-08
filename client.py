@@ -2,15 +2,18 @@
 Class holding info about a client BSSID
 """
 
-# Client with it's BSSID, is associated with an access_point
+
+# Client with it's MAC address, is associated with an access_point
 class Client:
-    def __init__(self, bssid, id):
-        self.bssid = bssid
+    def __init__(self, ap, id, mac):
+        self.ap = ap
         self.id = id
+        self.mac = mac
 
     # Information about the client
     def __str__(self):
-        message = "ID: " + str(self.id)
-        message += ", BSSID: " + str(self.bssid)
-        message += "."
-        return message
+        return " %02d  %s " % (self.id, self.mac)
+
+    @staticmethod
+    def get_header():
+        return " ID  MAC "

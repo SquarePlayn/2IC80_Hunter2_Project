@@ -2,7 +2,7 @@
 The main file for our program
 Requires scapy 2.4.2, installable using `pip3 install scapy`
 """
-
+import signal
 import sys
 import time
 
@@ -37,7 +37,7 @@ def main():
     utilities.initialize_mac_data()
 
     # Capture CTRL-C
-    # signal.signal(signal.SIGINT, catch_exceptions)
+    signal.signal(signal.SIGINT, catch_exceptions)
 
     iface = input("Please specify the interface: ")
     utilities.set_mon_mode(iface, "monitor")

@@ -47,7 +47,7 @@ def set_mon_mode(iface, mode):
 def bash_command(command):
     command = command.split()
     p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    output, err = p.communicate()
+    p.communicate()
 
 
 # Makes sure the script is ran as root

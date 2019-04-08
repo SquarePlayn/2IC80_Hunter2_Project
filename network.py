@@ -22,4 +22,3 @@ class Network:
     @staticmethod
     def get_header():
         return " ID  Encrypted  ESSID "
-

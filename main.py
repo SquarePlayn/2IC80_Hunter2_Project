@@ -9,15 +9,13 @@ import time
 from scapy.layers.dot11 import Dot11FCS
 
 import utilities
-# Dot11Type = Dot11
+from network import Network
 from access_point import AccessPoint
+from client import Client
 from ap_sniffer import APSniffer
 from channel_hopper import ChannelHopper
-from client import Client
 from deauth_sender import DeauthSender
 from handshake_sniffer import HandshakeSniffer
-
-from network import Network
 
 Dot11Type = Dot11FCS
 

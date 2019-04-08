@@ -1,4 +1,3 @@
-Fix Capture handshake
-Command line essid and/or bssid and/or victim MAC
-Victim selection
+Attack multiple AP or Clients
+Command line essid and/or bssid and/or victim MAC?
 MITM?

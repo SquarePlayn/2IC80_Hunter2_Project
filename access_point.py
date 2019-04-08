@@ -4,6 +4,7 @@ Class holding info about one BSSID (Access Point)
 
 
 # One physical access point (one MAC address)
+from client import Client
 from utilities import convert_mac
 
 
@@ -13,7 +14,7 @@ class AccessPoint:
         self.id = id
         self.bssid = bssid
         self.channel = channel
-        self.clients = []
+        self.clients = [Client.AllClients]
 
     # Print properties of this access point
     def __str__(self):

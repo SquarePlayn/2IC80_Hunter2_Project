@@ -2,7 +2,6 @@
 The main file for our program
 Requires scapy 2.4.2, installable using `pip3 install scapy`
 """
-import signal
 import sys
 import time
 
@@ -33,9 +32,6 @@ def main():
     utilities.require_root()
 
     utilities.initialize_mac_data()
-
-    # Capture CTRL-C
-    signal.signal(signal.SIGINT, catch_exceptions)
 
     iface = input("Please specify the interface: ")
     utilities.set_mon_mode(iface, "monitor")
@@ -186,6 +182,8 @@ def catch_exceptions(signal, frame):
 def finalize():
     global iface, threads
 
+    print("Cleaning up threads")
+
     # Stop all threads that are still running
     alive_threads = [thread for thread in threads if thread.isAlive()]
     for thread in alive_threads:
@@ -206,4 +204,8 @@ def finalize():
 
 # Run the script
 if __name__ == '__main__':
-    main()
+    # Makes sure CTRL+C is captured gracefully but can still be double done
+    try:
+        main()
+    except Exception as e:
+        finalize()

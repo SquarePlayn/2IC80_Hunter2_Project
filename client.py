@@ -5,6 +5,9 @@ Class holding info about a client BSSID
 
 # Client with it's MAC address, is associated with an access_point
 class Client:
+
+    AllClients = None
+
     def __init__(self, ap, id, mac):
         self.ap = ap
         self.id = id
@@ -17,3 +20,7 @@ class Client:
     @staticmethod
     def get_header():
         return " ID  MAC "
+
+
+# Singleton for broadcast
+Client.AllClients = Client(None, 0, "ff:ff:ff:ff:ff:ff")

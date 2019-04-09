@@ -1,3 +1,2 @@
-Attack multiple AP or Clients
 Command line essid and/or bssid and/or victim MAC?
 MITM?

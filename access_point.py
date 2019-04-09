@@ -9,12 +9,15 @@ from utilities import convert_mac
 
 
 class AccessPoint:
+
+    AllAccessPoints = None
+
     def __init__(self, network, id, bssid, channel):
         self.network = network
         self.id = id
         self.bssid = bssid
         self.channel = channel
-        self.clients = [Client.AllClients]
+        self.clients = [Client.Broadcast, Client.AllClients]
 
     # Print properties of this access point
     def __str__(self):
@@ -23,3 +26,6 @@ class AccessPoint:
     @staticmethod
     def get_header():
         return " ID  CHANNEL  BSSID"
+
+
+AccessPoint.AllAccessPoints = AccessPoint(None, 0, "All access points below", 0)

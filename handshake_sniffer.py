@@ -4,6 +4,7 @@ from scapy.layers.eap import EAPOL
 from scapy.sendrecv import sniff
 from scapy.utils import wrpcap
 
+
 class HandshakeSniffer(threading.Thread):
     def __init__(self, iface):
         super().__init__()

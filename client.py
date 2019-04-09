@@ -6,6 +6,7 @@ Class holding info about a client BSSID
 # Client with it's MAC address, is associated with an access_point
 class Client:
 
+    Broadcast = None
     AllClients = None
 
     def __init__(self, ap, id, mac):
@@ -23,4 +24,5 @@ class Client:
 
 
 # Singleton for broadcast
-Client.AllClients = Client(None, 0, "ff:ff:ff:ff:ff:ff")
+Client.Broadcast = Client(None, 0, "Broadcast to all clients")
+Client.AllClients = Client(None, 1, "Attack all clients separately")

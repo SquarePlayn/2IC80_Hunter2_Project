@@ -4,12 +4,15 @@ Class holding info about one essid (Network)
 
 
 # A network, potentially consisting of multiple APs (multiple transmitters)
+from access_point import AccessPoint
+
+
 class Network:
     def __init__(self, id, essid, encrypted):
         self.id = id
         self.essid = essid
         self.encrypted = encrypted
-        self.aps = []
+        self.aps = [AccessPoint.AllAccessPoints]
 
     def __str__(self):
         if self.encrypted:

